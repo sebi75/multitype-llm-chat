@@ -1,0 +1,14 @@
+{
+  "folders": [
+    {
+      "path": "indexing-service"
+    },
+    {
+      "path": "web-ui"
+    },
+    {
+      "path": "."
+    }
+  ],
+  "settings": {}
+}
