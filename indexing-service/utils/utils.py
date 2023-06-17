@@ -58,6 +58,29 @@ def is_image_type(mime_type):
     return mime_type in valid_image_mime_types
 
 
+def chunk_split(text, chunk_size):
+    return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
+
+def is_audio_type(mime_type):
+    audio_mime_types = [
+        "audio/mpeg",
+        "audio/wav",
+        "audio/mp3",
+        "audio/ogg",
+        "audio/aac",
+        "audio/flac",
+        "audio/x-ms-wma",
+        "audio/vnd.rn-realaudio",
+        "audio/webm",
+        "audio/midi",
+        "audio/x-aiff",
+        "audio/x-m4a",
+        "audio/x-ms-wax",
+        "audio/x-ms-wvx",
+    ]
+    return mime_type in audio_mime_types
+
+
 def categorize_file(mimetype: str) -> str:
     # given the mime type
     # use the defined utils to find if the
@@ -72,3 +95,5 @@ def categorize_file(mimetype: str) -> str:
         return "3d"
     elif is_youtube_video:
         return "youtube"
+    elif is_audio_type:
+        return "audio"

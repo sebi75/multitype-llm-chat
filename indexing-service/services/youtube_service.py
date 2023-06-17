@@ -3,6 +3,7 @@ import uuid
 from pytube import YouTube
 from services.openai_service import get_transcription
 from weaviate import Client
+from utils.utils import chunk_split
 
 
 def process_youtube_video(url: str):
@@ -36,6 +37,8 @@ def process_youtube_video(url: str):
             # make request to openai to get the transcritpion of the audio file
             transcription = get_transcription(file_handle)
             print(transcription)
+
+            chunks = chunk_split(transcription["text"], 512)
 
 
 def is_valid_audio(mime_type):

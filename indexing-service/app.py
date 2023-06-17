@@ -5,7 +5,7 @@ import pandas as pd
 from utils import utils
 from flask_cors import CORS
 from dotenv import load_dotenv
-from services import openai_service, youtube_service
+from services import openai_service, youtube_service, file_service
 from flask import Flask, jsonify, request
 
 load_dotenv()
@@ -30,6 +30,15 @@ def index_file():
     file = request.files["file"]
     mime_type = file.mimetype
     print(mime_type)
+
+    # utils.is_audio_type(file)
+    print("prcessing audio...")
+    result = file_service.process_audio_file(file)
+    print(result)
+
+    return jsonify({
+        "string": "result"
+    })
 
 
 @app.route("/index-url", methods=["POST"])
