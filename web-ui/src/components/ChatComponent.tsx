@@ -1,34 +1,47 @@
 import React, { useEffect } from "react";
 import { type FunctionComponent } from "react";
 import { type ReactNode } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "./ui/input";
 import { api } from "@/utils/api";
 import { useRouter } from "next/router";
 import { Loader2 } from "lucide-react";
-import { ChatRole } from "@prisma/client";
+import { type Chat, ChatRole } from "@prisma/client";
 import { useToast } from "./ui/use-toast";
 import { useChat } from "ai/react";
+import { Label } from "@radix-ui/react-label";
 
 type ChatComponentProps = {
   children?: ReactNode;
 };
 
-const chatInputSchema = z.object({
-  input: z.string().nonempty("Chat input is required"),
-});
-
-export const ChatComponent: FunctionComponent<ChatComponentProps> = ({
-  children,
-}) => {
-  const { messages, input, handleInputChange, handleSubmit } = useChat({
-    api: "/api/openai",
-  });
-  const router = useRouter();
+export const ChatComponent: FunctionComponent<ChatComponentProps> = () => {
   const toast = useToast();
+  const router = useRouter();
   const { chatId } = router.query;
+  const { mutate: saveChatMessage } = api.chats.saveChatMessage.useMutation();
+  const { messages, input, handleInputChange, handleSubmit, setMessages } =
+    useChat({
+      api: "/api/openai",
+      onFinish(message) {
+        saveChatMessage(
+          {
+            chatId: chatId as string,
+            role: ChatRole.assistant,
+            text: message.content,
+          },
+          {
+            onError(error) {
+              toast.toast({
+                title: "Error",
+                description: error.message,
+                variant: "destructive",
+              });
+            },
+          }
+        );
+      },
+    });
+  const { data: chatsData } = api.chats.getChats.useQuery();
   const { data: messagesData, isFetching: isMessagesLoading } =
     api.chats.getMessages.useQuery(
       {
@@ -39,39 +52,42 @@ export const ChatComponent: FunctionComponent<ChatComponentProps> = ({
       }
     );
 
-  const {
-    register,
-    handleSubmit: handleSubmitHookForm,
-    formState,
-  } = useForm({
-    defaultValues: {
-      input: "",
-    },
-    resolver: zodResolver(chatInputSchema),
-  });
+  const selectedChat = chatsData?.find((chat) => chat.id === chatId) as Chat;
 
   const handleSubmitInFunction = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    // here we want to also save user message to our database;
+    saveChatMessage(
+      {
+        chatId: chatId as string,
+        role: ChatRole.user,
+        text: input,
+      },
+      {
+        onError(error) {
+          toast.toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive",
+          });
+        },
+      }
+    );
     handleSubmit(e);
   };
 
-  //   const onSubmit = (data: z.infer<typeof chatInputSchema>) => {
-  //     // we want to call the custom api function and
-  //     // make use of the vercel function to generate text
-  //   };
-
   useEffect(() => {
-    if (Object.keys(formState.errors).length === 0) return;
-    // iterate the errors from the objects and show toast
-    // if there is an error with the message form the error
-    Object.values(formState.errors).forEach((error) => {
-      toast.toast({
-        title: "Error",
-        variant: "destructive",
-        description: error.message,
-      });
-    });
-  }, [formState.errors]);
+    if (!messagesData) return;
+    // take the presaved messages and add them to messages;
+    setMessages(
+      messagesData.map((message) => ({
+        content: message.text,
+        id: message.id,
+        role: message.role,
+        createdAt: message.createdAt,
+      }))
+    );
+  }, [messagesData]);
 
   // this is the main component that represents a chat
   // it is either empty or has messages
@@ -79,15 +95,22 @@ export const ChatComponent: FunctionComponent<ChatComponentProps> = ({
   // fetch the messages for that chatId
   return (
     <div className="relative h-full w-full">
+      {/* the chat component label */}
+      <div className="flex flex-row border-b p-4">
+        Selected chat:
+        <Label className="ml-2 font-bold">
+          {selectedChat && selectedChat.name}
+        </Label>
+      </div>
       {/* the container that has all the messages */}
-      <div className="flex w-full flex-col">
+      <div className="flex w-full flex-col px-2">
         {messages.map((message) => {
           const { content, id, role } = message;
           return (
             <div
               key={id}
               className={`${
-                role !== ChatRole.assistant && "text-end"
+                role !== ChatRole.assistant && "bg-accent text-end"
               } my-2 w-full rounded-md border p-2`}
             >
               <h1>{role === ChatRole.assistant ? "Assistant" : "You"}</h1>
@@ -95,33 +118,15 @@ export const ChatComponent: FunctionComponent<ChatComponentProps> = ({
             </div>
           );
         })}
-        {isMessagesLoading ? (
+        {isMessagesLoading && (
           <div className="flex h-full items-center justify-center">
             <Loader2 className="animate-spin" size={64} />
           </div>
-        ) : (
-          messagesData &&
-          messagesData.length > 0 &&
-          messagesData.map((message) => {
-            const { role, text, id } = message;
-
-            return (
-              <div
-                key={id}
-                className={`${
-                  role !== ChatRole.assistant && "text-end"
-                } w-full rounded-md border`}
-              >
-                <h1>{role === ChatRole.assistant ? "Assistat" : "You"}</h1>
-                <p className="text-sm">{text}</p>
-              </div>
-            );
-          })
         )}
       </div>
       {/* the main input into the chat */}
       <form
-        className="absolute bottom-0 w-full"
+        className="absolute bottom-3 w-full px-2"
         onSubmit={handleSubmitInFunction}
       >
         <Input

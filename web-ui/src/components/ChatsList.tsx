@@ -1,10 +1,10 @@
-import { useEffect, type FunctionComponent } from "react";
+import { useEffect, type FunctionComponent, useState } from "react";
 import { type Chat } from "@prisma/client";
 import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, PlusIcon } from "lucide-react";
+import { DeleteIcon, Loader2, PlusIcon } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -26,6 +26,7 @@ export const createChatSchema = z.object({
 });
 
 export const ChatsList: FunctionComponent<ChatsListProps> = ({ chats }) => {
+  const [isCreateChatOpen, setIsCreateChatOpen] = useState(false);
   const toast = useToast();
   const router = useRouter();
   const utils = api.useContext();
@@ -36,6 +37,7 @@ export const ChatsList: FunctionComponent<ChatsListProps> = ({ chats }) => {
     },
     resolver: zodResolver(createChatSchema),
   });
+  const { mutate: deleteChat } = api.chats.deleteChat.useMutation();
   const { mutate: createChat, isLoading: isCreateChatLoading } =
     api.chats.createChat.useMutation();
 
@@ -50,12 +52,8 @@ export const ChatsList: FunctionComponent<ChatsListProps> = ({ chats }) => {
       },
       {
         onSuccess: () => {
-          toast.toast({
-            title: "Chat created",
-            variant: "success",
-            description: "Chat was created successfully",
-          });
           utils.chats.getChats.invalidate();
+          setIsCreateChatOpen(false);
         },
         onError: () => {
           toast.toast({
@@ -63,6 +61,34 @@ export const ChatsList: FunctionComponent<ChatsListProps> = ({ chats }) => {
             variant: "success",
             description: "Chat creation failed",
           });
+        },
+      }
+    );
+  };
+
+  const handleDeleteChat = (id: string) => {
+    deleteChat(
+      {
+        chatId: chatId as string,
+      },
+      {
+        onError(error) {
+          toast.toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive",
+          });
+        },
+        onSuccess() {
+          toast.toast({
+            title: "Chat deleted",
+            description: "Chat was deleted successfully",
+            variant: "success",
+          });
+          utils.chats.getChats.invalidate();
+          if (chatId === id) {
+            router.push("/chats");
+          }
         },
       }
     );
@@ -85,7 +111,12 @@ export const ChatsList: FunctionComponent<ChatsListProps> = ({ chats }) => {
     <div className="flex flex-col items-center">
       <div className="flex w-full flex-row items-center justify-center gap-3 border-b py-2">
         <Label>Chats</Label>
-        <Popover>
+        <Popover
+          open={isCreateChatOpen}
+          onOpenChange={(open) => {
+            setIsCreateChatOpen(open);
+          }}
+        >
           {!isCreateChatLoading ? (
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-10 rounded-full p-0">
@@ -126,14 +157,22 @@ export const ChatsList: FunctionComponent<ChatsListProps> = ({ chats }) => {
             <div
               className={`${
                 chatId === id
-                  ? "my-2 flex w-full flex-col gap-3 rounded-md border bg-accent p-3 duration-150 hover:text-accent-foreground"
-                  : "my-2 flex w-full flex-col gap-3 rounded-md border p-3 duration-150 hover:bg-accent hover:text-accent-foreground"
+                  ? "my-2 flex w-full flex-row justify-between gap-3 rounded-md border bg-accent p-3 duration-150 hover:text-accent-foreground"
+                  : "my-2 flex w-full flex-row justify-between gap-3 rounded-md border p-3 duration-150 hover:bg-accent hover:text-accent-foreground"
               }`}
               key={id}
               onClick={() => handleChatClick(id)}
             >
-              <Label>{name}</Label>
-              <p className="text-xs text-gray-400">{formatDate(createdAt)}</p>
+              <div className="flex flex-col gap-3">
+                <Label>{name}</Label>
+                <p className="text-xs text-gray-400">{formatDate(createdAt)}</p>
+              </div>
+              <Button
+                variant="destructive"
+                onClick={() => handleDeleteChat(id)}
+              >
+                <DeleteIcon className="h-4 w-4" />
+              </Button>
             </div>
           );
         })}

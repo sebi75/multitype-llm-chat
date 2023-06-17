@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     messages: Message[];
   };
 
-  console.log(messages);
+  const latestUserMessage = messages[messages.length - 1] as Message;
   // here we need to call the indexing service for searching
   // context and then package the context
   // with the user prompt and send a request to openai
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
   const response = await openai.createChatCompletion({
     model: "gpt-3.5-turbo",
     stream: true,
-    max_tokens: 500,
+    max_tokens: 1000,
     messages: messages as ChatCompletionRequestMessage[],
   });
 

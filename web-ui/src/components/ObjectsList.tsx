@@ -22,6 +22,9 @@ export const ObjectsList: FunctionComponent = () => {
         enabled: !!chatId,
       }
     );
+
+  const hasObjectsData = objectsData && objectsData?.length > 0;
+
   return (
     <div>
       <div className="flex w-full flex-row items-center justify-center gap-3 border-b py-2">
@@ -67,6 +70,17 @@ export const ObjectsList: FunctionComponent = () => {
           </PopoverContent>
         </Popover>
       </div>
+
+      {/* chat objects list */}
+      {hasObjectsData ? (
+        <div className="flex flex-col">{/* map the list of the objects */}</div>
+      ) : (
+        <div className="flex w-full justify-center">
+          <h1 className="text-sm text-gray-400">
+            Add new objects to interact with them.
+          </h1>
+        </div>
+      )}
     </div>
   );
 };

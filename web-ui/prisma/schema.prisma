@@ -79,11 +79,11 @@ enum ChatRole {
 model Messages {
     id        String   @id @default(cuid())
     chatId    String
-    text      String
+    text      String   @db.Text
     role      ChatRole @default(user)
     createdAt DateTime @default(now())
 
-    chat Chat @relation(fields: [chatId], references: [id])
+    chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
 }
 
 model Objects {
@@ -93,7 +93,7 @@ model Objects {
     name   String
     type   String
 
-    chat Chat @relation(fields: [chatId], references: [id])
+    chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {
