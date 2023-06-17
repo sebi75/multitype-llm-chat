@@ -17,8 +17,6 @@ export const ChatLayoutWrapper: FunctionComponent<ChatLayoutWrapperProps> = ({
   const { data: chatsData, isLoading: isChatsLoading } =
     api.chats.getChats.useQuery();
 
-  console.log(chatId);
-
   return (
     <div className="flex max-h-screen min-h-screen flex-row justify-between">
       {/* the section of the chats */}
@@ -33,7 +31,7 @@ export const ChatLayoutWrapper: FunctionComponent<ChatLayoutWrapperProps> = ({
       </div>
       {/* The section of the currently open chat */}
       {/* here we want to insetr the chat component */}
-      <div className="h-ful w-full p-3">{children}</div>
+      <div className="h-ful w-full">{children}</div>
       {/* the section of the chat objects list */}
       {chatId && (
         <div className="w-[25%] border-l">

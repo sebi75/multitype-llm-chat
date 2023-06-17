@@ -13,8 +13,6 @@ export function formatDate(date: Date) {
 }
 
 export const postData = async ({ url, data }: { url: string; data?: any }) => {
-  console.log("posting,", url, data);
-
   const res = await fetch(url, {
     method: "POST",
     headers: new Headers({ "Content-Type": "application/json" }),
