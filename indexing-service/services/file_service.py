@@ -12,11 +12,11 @@ class NamedBytesIO(BytesIO):
         self.name = name
 
 
-
 def convert_audio_format(file):
     # Convert the file to a supported format (e.g., WAV)
     audio = AudioSegment.from_file(file, format=file.mimetype.split("/")[-1])
-    converted_file = NamedBytesIO(audio.export().read(), name=file.filename + ".wav")
+    converted_file = NamedBytesIO(
+        audio.export().read(), name=file.filename + ".wav")
 
     return converted_file
 
@@ -41,7 +41,7 @@ def split_text(text):
 
 
 def process_audio_file(file):
-    
+
     # get the file type that we got from youtube;
     mime_type = file.mimetype
 
@@ -71,10 +71,8 @@ def process_audio_file(file):
 
         chunks = chunk_split(transcription["text"], 512)
 
-        print(chunks)
+        return chunks
 
-
-            
 
 def is_valid_audio(mime_type):
     valid_audio_mime_types = [
