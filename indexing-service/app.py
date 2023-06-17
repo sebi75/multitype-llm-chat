@@ -2,13 +2,15 @@ import os
 import time
 import openai
 import json
-import pandas as pd
+# import pandas as pd
 from utils import utils
 from flask_cors import CORS
 from weaviate import Client
 from dotenv import load_dotenv
 from services import openai_service, youtube_service, file_service, weaviateService
 from flask import Flask, jsonify, request
+
+from services import indexing_service
 
 load_dotenv()
 
@@ -37,25 +39,19 @@ def index_file():
 
     chat_id = request.form["chat_id"]
     print("got chat_id: ", chat_id)
-    weaviateService.getOrCreateClass(client, chat_id)
 
     # utils.is_audio_type(file)
     print("processing audio...")
     result: list[str] = file_service.process_audio_file(file)
 
-    # put the result into a pandas dataframe
-    df = pd.DataFrame(result, columns=["chunk"])
 
-    # now apply the embedding function to the dataframe
-    df["embedding"] = df["chunk"].apply(openai_service.get_embedding)
 
-    # iterate the dataframe and add every row to the weaviate class
-    for index, row in df.iterrows():
-        data_object = {
-            "text": row["chunk"],
-        }
-        client.data_object.create(data_object=data_object, class_name=chat_id,
-                                  vector=row["embedding"])
+
+    indexing_service.indexing_save(result, chat_id, client)
+        
+
+
+
 
     # embed every text and add it to the weaviate class.
 
@@ -77,7 +73,6 @@ def index_url():
         print(url)
 
         result = youtube_service.process_youtube_video(url)
-        print(result)
     else:
         print("do normal page processing of the information")
 
@@ -86,26 +81,13 @@ def index_url():
 
     chat_id = request.get_json()["chat_id"]
     print("got chat_id: ", chat_id)
-    # weaviateService.getOrCreateClass(client, chat_id)
 
-    # # put the result into a pandas dataframe
-    # df = pd.DataFrame(result, columns=["chunk"])
-
-    # # now apply the embedding function to the dataframe
-    # df["embedding"] = df["chunk"].apply(openai_service.get_embedding)
-
-    # # iterate the dataframe and add every row to the weaviate class
-    # for index, row in df.iterrows():
-    #     data_object = {
-    #         "text": row["chunk"],
-    #     }
-    #     client.data_object.create(data_object=data_object, class_name=chat_id,
-    #                               vector=row["embedding"])
+    indexing_service.indexing_save(result, chat_id, client)
 
     # embed every text and add it to the weaviate class.
 
     return jsonify({
-        "data": "data_object"
+        "data": result
     })
 
 

@@ -38,7 +38,7 @@ def process_youtube_video(url: str):
             transcription = get_transcription(file_handle)
             print(transcription)
 
-            chunks = chunk_split(transcription["text"], 512)
+            return chunk_split(transcription["text"], 512)
 
 
 def is_valid_audio(mime_type):
