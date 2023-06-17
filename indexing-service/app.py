@@ -5,7 +5,7 @@ import pandas as pd
 from utils import utils
 from flask_cors import CORS
 from dotenv import load_dotenv
-from services import embeddings, youtube
+from services import openai_service, youtube_service
 from flask import Flask, jsonify, request
 
 load_dotenv()
@@ -22,10 +22,14 @@ def ping():
     return jsonify(response)
 
 
+# this route takes whole files
 @app.route("/index-file", methods=["POST"])
 def index_file():
-    print("received request")
-    pass
+    # take the file from the request and
+    # put the mime type into a variable
+    file = request.files["file"]
+    mime_type = file.mimetype
+    print(mime_type)
 
 
 @app.route("/index-url", methods=["POST"])
@@ -36,7 +40,7 @@ def index_url():
 
     if is_youtube_url:
         print("In youtube if for processing it...")
-        result = youtube.process_youtube_video(url)
+        result = youtube_service.process_youtube_video(url)
         print(result)
     else:
         print("do normal page processing of the information")
