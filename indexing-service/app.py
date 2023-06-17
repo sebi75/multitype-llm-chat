@@ -70,14 +70,43 @@ def index_url():
     url = request.get_json()["url"]
     is_youtube_url = utils.is_youtube_video(url)
 
+
     if is_youtube_url:
         print("In youtube if for processing it...")
+
+        print(url)
+
         result = youtube_service.process_youtube_video(url)
         print(result)
     else:
         print("do normal page processing of the information")
 
-    return jsonify({"message": "ok"})
+
+    
+
+    chat_id = request.get_json()["chat_id"]
+    print("got chat_id: ", chat_id)
+    # weaviateService.getOrCreateClass(client, chat_id)
+
+    # # put the result into a pandas dataframe
+    # df = pd.DataFrame(result, columns=["chunk"])
+
+    # # now apply the embedding function to the dataframe
+    # df["embedding"] = df["chunk"].apply(openai_service.get_embedding)
+
+    # # iterate the dataframe and add every row to the weaviate class
+    # for index, row in df.iterrows():
+    #     data_object = {
+    #         "text": row["chunk"],
+    #     }
+    #     client.data_object.create(data_object=data_object, class_name=chat_id,
+    #                               vector=row["embedding"])
+
+    # embed every text and add it to the weaviate class.
+
+    return jsonify({
+        "data": "data_object"
+    })
 
 
 @app.route("/search", methods=["POST"])
@@ -94,16 +123,17 @@ def search():
         .get(chat_id, ["text"])
         .with_near_vector({
             "vector": search_query_embedding, })
-        .with_limit(5)
+        .with_limit(10)
         .with_additional(["distance"])
         .do()
     )
     data = response["data"]["Get"][f"{chat_id}"]
-    print(json.dumps
-          (data, indent=2))
-
+    
+    # filter the data in terms of accuracy
+    filtered_data = utils.filter_result(data, 0.25)
+ 
     return jsonify({
-        "data": data
+        "data": filtered_data
     })
 
 

@@ -61,6 +61,9 @@ def is_image_type(mime_type):
 def chunk_split(text, chunk_size):
     return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
 
+def filter_result(data, accuracy):
+    return [item for item in data if item["_additional"]["distance"] <= accuracy]
+
 def is_audio_type(mime_type):
     audio_mime_types = [
         "audio/mpeg",
