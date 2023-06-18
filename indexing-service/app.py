@@ -44,14 +44,7 @@ def index_file():
     print("processing audio...")
     result: list[str] = file_service.process_audio_file(file)
 
-
-
-
     indexing_service.indexing_save(result, chat_id, client)
-        
-
-
-
 
     # embed every text and add it to the weaviate class.
 
@@ -62,10 +55,8 @@ def index_file():
 
 @app.route("/index-url", methods=["POST"])
 def index_url():
-    print("received request")
     url = request.get_json()["url"]
     is_youtube_url = utils.is_youtube_video(url)
-
 
     if is_youtube_url:
         print("In youtube if for processing it...")
@@ -75,9 +66,6 @@ def index_url():
         result = youtube_service.process_youtube_video(url)
     else:
         print("do normal page processing of the information")
-
-
-    
 
     chat_id = request.get_json()["chat_id"]
     print("got chat_id: ", chat_id)
@@ -93,9 +81,10 @@ def index_url():
 
 @app.route("/search", methods=["POST"])
 def search():
+    print("got in request")
     # we get a search query from the request
     search_query = request.get_json()["search_query"]
-    chat_id = request.get_json()["chat_id"]
+    chat_id: str = request.get_json()["chat_id"]
 
     # embed the search query
     search_query_embedding = openai_service.get_embedding(search_query)
@@ -105,17 +94,38 @@ def search():
         .get(chat_id, ["text"])
         .with_near_vector({
             "vector": search_query_embedding, })
-        .with_limit(10)
+        .with_limit(5)
         .with_additional(["distance"])
         .do()
     )
-    data = response["data"]["Get"][f"{chat_id}"]
-    
+    capitalized_chat_id = chat_id.capitalize()
+    data = response["data"]["Get"][f"{capitalized_chat_id}"]
+
     # filter the data in terms of accuracy
     filtered_data = utils.filter_result(data, 0.25)
- 
+
     return jsonify({
         "data": filtered_data
+    })
+
+
+@app.route("/check-schema", methods=["GET"])
+def check_schema():
+    # check if the schema is already created
+    # if not create it
+    # if yes, do nothing
+    schema = client.schema.get()
+    if schema == {}:
+        print("schema is empty")
+        # create the schema
+        schema = weaviateService.create_schema(client)
+        print("schema created")
+    else:
+        print("schema is not empty")
+        print(schema)
+
+    return jsonify({
+        "schema": schema
     })
 
 
