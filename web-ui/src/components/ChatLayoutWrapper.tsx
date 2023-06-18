@@ -20,7 +20,7 @@ export const ChatLayoutWrapper: FunctionComponent<ChatLayoutWrapperProps> = ({
   return (
     <div className="flex max-h-screen min-h-screen flex-row justify-between">
       {/* the section of the chats */}
-      <div className="w-[25%] border-r">
+      <div className="w-[25%] min-w-[300px] border-r">
         {isChatsLoading || !chatsData ? (
           <div>
             <LoadingSpinner />
@@ -34,7 +34,7 @@ export const ChatLayoutWrapper: FunctionComponent<ChatLayoutWrapperProps> = ({
       <div className="h-ful w-full">{children}</div>
       {/* the section of the chat objects list */}
       {chatId && (
-        <div className="w-[25%] border-l">
+        <div className="w-[30%] border-l">
           <ObjectsList />
         </div>
       )}

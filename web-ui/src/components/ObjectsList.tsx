@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { useState, type FunctionComponent, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
@@ -132,6 +133,8 @@ export const ObjectsList: FunctionComponent = () => {
     }
   };
 
+  console.log(objectsData);
+
   const handleAddObject = async () => {
     if (resourceType === "url") {
       await handleAddURL(url);
@@ -239,9 +242,25 @@ export const ObjectsList: FunctionComponent = () => {
                 }`}
                 key={id}
               >
-                <div className="flex flex-row items-center gap-3">
-                  {resolveIcon(type)}
-                  <Label>{name}</Label>
+                <div className="flex flex-col items-center gap-3">
+                  {object.preview && object.preview.image && (
+                    <div className="relative h-auto w-full">
+                      <img
+                        src={object.preview?.image ?? ""}
+                        alt={name}
+                        className="h-full w-full"
+                      />
+                    </div>
+                  )}
+                  <div className="flex-col">
+                    <div className="flex flex-row gap-3">
+                      {resolveIcon(type)}
+                      <Label>{name}</Label>
+                    </div>
+                    <p className="text-sm text-gray-500">
+                      {object.preview?.description ?? ""}
+                    </p>
+                  </div>
                 </div>
                 {/* <Button
                 variant="destructive"

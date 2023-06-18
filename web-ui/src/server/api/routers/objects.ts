@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import fetchWebsite from "@/lib/fetchWebsite";
 
 export const objectsRouter = createTRPCRouter({
   getChatObjects: protectedProcedure
@@ -8,12 +9,25 @@ export const objectsRouter = createTRPCRouter({
         chatId: z.string(),
       })
     )
-    .query(({ ctx, input }) => {
-      return ctx.prisma.objects.findMany({
+    .query(async ({ ctx, input }) => {
+      const objects = await ctx.prisma.objects.findMany({
         where: {
           chatId: input.chatId,
         },
       });
+
+      const responseObjects = [];
+      for (const object of objects) {
+        if (object.type === "url" || object.type === "youtube") {
+          const preview = await fetchWebsite(object.name);
+          responseObjects.push({
+            ...object,
+            preview,
+          });
+        }
+      }
+
+      return responseObjects;
     }),
   createChatObject: protectedProcedure
     .input(
@@ -33,5 +47,16 @@ export const objectsRouter = createTRPCRouter({
           type: fileType,
         },
       });
+    }),
+
+  getUrlPreview: protectedProcedure
+    .input(
+      z.object({
+        url: z.string(),
+      })
+    )
+    .query(({ input }) => {
+      const { url } = input;
+      return fetchWebsite(url);
     }),
 });
