@@ -9,6 +9,9 @@ import { type Chat, ChatRole } from "@prisma/client";
 import { useToast } from "./ui/use-toast";
 import { useChat } from "ai/react";
 import { Label } from "@radix-ui/react-label";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { useSession } from "next-auth/react";
+import AutoScrollContainer from "./AutoScrollContainer";
 
 type ChatComponentProps = {
   children?: ReactNode;
@@ -16,6 +19,7 @@ type ChatComponentProps = {
 
 export const ChatComponent: FunctionComponent<ChatComponentProps> = () => {
   const toast = useToast();
+  const { data: sessionData } = useSession();
   const router = useRouter();
   const { chatId } = router.query;
   const { mutate: saveChatMessage } = api.chats.saveChatMessage.useMutation();
@@ -107,18 +111,32 @@ export const ChatComponent: FunctionComponent<ChatComponentProps> = () => {
         </Label>
       </div>
       {/* the container that has all the messages */}
-      <div className="flex h-full w-full flex-col overflow-y-scroll px-2">
+      <AutoScrollContainer>
         {messages.map((message) => {
           const { content, id, role } = message;
           return (
             <div
               key={id}
               className={`${
-                role !== ChatRole.assistant && "bg-accent text-end"
-              } my-2 w-full rounded-md border p-2`}
+                role !== ChatRole.assistant && "bg-accent"
+              } my-2 flex w-full flex-row items-center gap-3 rounded-md border p-2`}
             >
-              <h1>{role === ChatRole.assistant ? "Assistant" : "You"}</h1>
-              <p className="text-sm">{content}</p>
+              {role === "assistant" ? (
+                <Avatar>
+                  <AvatarFallback>AI</AvatarFallback>
+                </Avatar>
+              ) : (
+                <Avatar>
+                  <AvatarImage src={sessionData?.user.image ?? ""} />
+                  <AvatarFallback>
+                    {sessionData?.user.email?.slice(0, 2)}
+                  </AvatarFallback>
+                </Avatar>
+              )}
+              <div className="flex flex-col justify-center gap-3">
+                <h1>{role === ChatRole.assistant ? "Assistant" : "You"}</h1>
+                <p className="text-sm">{content}</p>
+              </div>
             </div>
           );
         })}
@@ -127,7 +145,7 @@ export const ChatComponent: FunctionComponent<ChatComponentProps> = () => {
             <Loader2 className="animate-spin" size={64} />
           </div>
         )}
-      </div>
+      </AutoScrollContainer>
       {/* the main input into the chat */}
       <div className="h-[55px] w-full bg-accent px-2">
         <form className="w-full" onSubmit={handleSubmitInFunction}>

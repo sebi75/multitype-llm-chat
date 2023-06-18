@@ -227,7 +227,7 @@ export const ObjectsList: FunctionComponent = () => {
       )}
       {/* chat objects list */}
       {hasObjectsData ? (
-        <div className="flex flex-col">
+        <div className="flex flex-col p-2">
           {objectsData?.map((object) => {
             const { chatId, id, name, type } = object;
             return (
