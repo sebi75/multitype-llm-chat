@@ -9,6 +9,9 @@ import { type Chat, ChatRole } from "@prisma/client";
 import { useToast } from "./ui/use-toast";
 import { useChat } from "ai/react";
 import { Label } from "@radix-ui/react-label";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { useSession } from "next-auth/react";
+import AutoScrollContainer from "./AutoScrollContainer";
 
 type ChatComponentProps = {
   children?: ReactNode;
@@ -16,12 +19,16 @@ type ChatComponentProps = {
 
 export const ChatComponent: FunctionComponent<ChatComponentProps> = () => {
   const toast = useToast();
+  const { data: sessionData } = useSession();
   const router = useRouter();
   const { chatId } = router.query;
   const { mutate: saveChatMessage } = api.chats.saveChatMessage.useMutation();
   const { messages, input, handleInputChange, handleSubmit, setMessages } =
     useChat({
-      api: "/api/openai",
+      api: `/api/openai`,
+      body: {
+        chatId: chatId as string,
+      },
       onFinish(message) {
         saveChatMessage(
           {
@@ -56,7 +63,7 @@ export const ChatComponent: FunctionComponent<ChatComponentProps> = () => {
 
   const handleSubmitInFunction = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // here we want to also save user message to our database;
+    e.stopPropagation();
     saveChatMessage(
       {
         chatId: chatId as string,
@@ -87,6 +94,7 @@ export const ChatComponent: FunctionComponent<ChatComponentProps> = () => {
         createdAt: message.createdAt,
       }))
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messagesData]);
 
   // this is the main component that represents a chat
@@ -94,7 +102,7 @@ export const ChatComponent: FunctionComponent<ChatComponentProps> = () => {
   // if we are on a page that has a chat id, then we
   // fetch the messages for that chatId
   return (
-    <div className="relative h-full w-full">
+    <div className="flex h-screen max-h-screen w-full flex-col justify-between">
       {/* the chat component label */}
       <div className="flex flex-row border-b p-4">
         Selected chat:
@@ -103,18 +111,32 @@ export const ChatComponent: FunctionComponent<ChatComponentProps> = () => {
         </Label>
       </div>
       {/* the container that has all the messages */}
-      <div className="flex w-full flex-col px-2">
+      <AutoScrollContainer>
         {messages.map((message) => {
           const { content, id, role } = message;
           return (
             <div
               key={id}
               className={`${
-                role !== ChatRole.assistant && "bg-accent text-end"
-              } my-2 w-full rounded-md border p-2`}
+                role !== ChatRole.assistant && "bg-accent"
+              } my-2 flex w-full flex-row items-center gap-3 rounded-md border p-2`}
             >
-              <h1>{role === ChatRole.assistant ? "Assistant" : "You"}</h1>
-              <p className="text-sm">{content}</p>
+              {role === "assistant" ? (
+                <Avatar>
+                  <AvatarFallback>AI</AvatarFallback>
+                </Avatar>
+              ) : (
+                <Avatar>
+                  <AvatarImage src={sessionData?.user.image ?? ""} />
+                  <AvatarFallback>
+                    {sessionData?.user.email?.slice(0, 2)}
+                  </AvatarFallback>
+                </Avatar>
+              )}
+              <div className="flex flex-col justify-center gap-3">
+                <h1>{role === ChatRole.assistant ? "Assistant" : "You"}</h1>
+                <p className="text-sm">{content}</p>
+              </div>
             </div>
           );
         })}
@@ -123,29 +145,18 @@ export const ChatComponent: FunctionComponent<ChatComponentProps> = () => {
             <Loader2 className="animate-spin" size={64} />
           </div>
         )}
-      </div>
+      </AutoScrollContainer>
       {/* the main input into the chat */}
-      <form
-        className="absolute bottom-3 w-full px-2"
-        onSubmit={handleSubmitInFunction}
-      >
-        <Input
-          className="w-full"
-          placeholder="Say something..."
-          value={input}
-          onChange={handleInputChange}
-        />
-      </form>
-      {/* <form
-        onSubmit={handleSubmitHookForm(onSubmit)}
-        className="absolute bottom-0 w-full"
-      >
-        <Input
-          className="w-full"
-          placeholder="Type a message..."
-          {...register("input")}
-        />
-      </form> */}
+      <div className="h-[55px] w-full bg-accent px-2">
+        <form className="w-full" onSubmit={handleSubmitInFunction}>
+          <Input
+            className="h-[55px] w-full"
+            placeholder="Say something..."
+            value={input}
+            onChange={handleInputChange}
+          />
+        </form>
+      </div>
     </div>
   );
 };

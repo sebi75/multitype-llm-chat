@@ -36,7 +36,6 @@ def process_youtube_video(url: str):
         with open(download_path, "rb") as file_handle:
             # make request to openai to get the transcritpion of the audio file
             transcription = get_transcription(file_handle)
-            print(transcription)
 
             return chunk_split(transcription["text"], 512)
 
