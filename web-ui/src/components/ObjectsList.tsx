@@ -1,17 +1,33 @@
-import { type FunctionComponent } from "react";
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { useState, type FunctionComponent, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { PlusIcon } from "lucide-react";
+import { Loader2, PlusIcon, YoutubeIcon } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { HTTPMethod, fetcher } from "@/lib/fetcher";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useRouter } from "next/router";
 import { api } from "@/utils/api";
+import { Input } from "./ui/input";
+import { useToast } from "./ui/use-toast";
 
 export const ObjectsList: FunctionComponent = () => {
   const router = useRouter();
+  const toast = useToast();
+  const utils = api.useContext();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [resourceType, setResourceType] = useState("url");
+  const [url, setUrl] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [isIndexing, setIsIndexing] = useState(false);
   const { chatId } = router.query;
   const { data: objectsData, isLoading: isObjectsLoading } =
     api.objects.getChatObjects.useQuery(
@@ -22,58 +38,221 @@ export const ObjectsList: FunctionComponent = () => {
         enabled: !!chatId,
       }
     );
+  const { mutateAsync: createObject } =
+    api.objects.createChatObject.useMutation();
 
   const hasObjectsData = objectsData && objectsData?.length > 0;
+
+  const handleAddURL = async (url: string) => {
+    const path = "/index-url";
+
+    try {
+      setIsIndexing(true);
+      // index the file in the indexing python service
+      // for later use in the application for semantic
+      // search to get the information
+      await fetcher(path, HTTPMethod.POST, false, {
+        url: url,
+        chat_id: chatId as string,
+      });
+      await createObject(
+        {
+          chatId: chatId as string,
+          fileType: "youtube",
+          name: url,
+        },
+        {
+          onSuccess: () => {
+            utils.objects.invalidate();
+          },
+        }
+      );
+      toast.toast({
+        title: "Indexing successful",
+        description:
+          "The URL has been indexed successfully, go chat with the info.",
+      });
+      setIsIndexing(false);
+    } catch (error) {
+      toast.toast({
+        title: "Indexing failed",
+        description: "Indexing of the information failed",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAddFileToAPI = async (file: File) => {
+    const path = "/index-file";
+
+    try {
+      const form = new FormData();
+      form.append("chat_id", chatId as string);
+      form.append("file", file);
+      const response = await fetch("http://localhost:5050/index-file", {
+        method: "POST",
+        body: form,
+      });
+
+      if (!response.ok) {
+        toast.toast({
+          title: "Indexing failed",
+          description: "Indexing of the information failed",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast.toast({
+        title: "Indexing successful",
+        description:
+          "The file has been indexed successfully, go chat with the info.",
+      });
+    } catch (error) {
+      toast.toast({
+        title: "Indexing failed",
+        description: "Indexing of the information failed",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAddFile = (event: ChangeEvent<HTMLInputElement>) => {
+    //@ts-ignore
+    const file = event.target.files[0];
+    if (!file) return;
+    setFile(file);
+  };
+
+  const resolveIcon = (type: string) => {
+    if (type === "youtube") {
+      return <YoutubeIcon className="h-6 w-6" />;
+    } else {
+      return <div></div>;
+    }
+  };
+
+  const handleAddObject = async () => {
+    if (resourceType === "url") {
+      await handleAddURL(url);
+    } else {
+      if (!file) return;
+      await handleAddFileToAPI(file);
+      // do something else ( is is file )
+    }
+  };
 
   return (
     <div>
       <div className="flex w-full flex-row items-center justify-center gap-3 border-b py-2">
         <Label>Objects</Label>
-        <Popover>
-          <PopoverTrigger asChild>
+        <Dialog
+          open={isDialogOpen}
+          onOpenChange={(open) => {
+            if (isIndexing) return;
+            setIsDialogOpen(open);
+          }}
+        >
+          <DialogTrigger asChild>
             <Button variant="outline" className="w-10 rounded-full p-0">
               <PlusIcon className="h-4 w-4" />
             </Button>
-          </PopoverTrigger>
-          {/* {!isCreateChatLoading ? (
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="w-10 rounded-full p-0">
-                <PlusIcon className="h-4 w-4" />
+          </DialogTrigger>
+          <DialogContent className="flex flex-col items-center gap-4 sm:max-w-[550px]">
+            <DialogHeader>
+              <DialogTitle>Add new object to chat</DialogTitle>
+              <DialogDescription>
+                Add new objects to interact with them here.
+              </DialogDescription>
+            </DialogHeader>
+            <Tabs defaultValue="url" className="w-[400px]">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger
+                  value="url"
+                  onClick={() => {
+                    setFile(null);
+                    setResourceType("url");
+                  }}
+                >
+                  URL
+                </TabsTrigger>
+                <TabsTrigger
+                  value="file"
+                  onClick={() => {
+                    setUrl("");
+                    setResourceType("file");
+                  }}
+                >
+                  FILE
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="url">
+                <div className="grid w-full max-w-sm items-center gap-1.5">
+                  <Label htmlFor="url">URL</Label>
+                  <Input
+                    placeholder="https://youtube.com/"
+                    value={url}
+                    onChange={(event) => setUrl(event.target.value)}
+                    id="url"
+                    type="text"
+                  />
+                </div>
+              </TabsContent>
+              <TabsContent value="file">
+                <div className="grid w-full max-w-sm items-center gap-1.5">
+                  <Label htmlFor="picture">Picture</Label>
+                  <Input onChange={handleAddFile} id="picture" type="file" />
+                </div>
+              </TabsContent>
+            </Tabs>
+            <DialogFooter>
+              <Button
+                disabled={isIndexing}
+                onClick={() => handleAddObject()}
+                type="submit"
+              >
+                {isIndexing && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Add Object
               </Button>
-            </PopoverTrigger>
-          ) : (
-            <Button
-              disabled={isCreateChatLoading}
-              variant="outline"
-              className="w-10 rounded-full p-0"
-            >
-              <Loader2 className="h-4 w-4 animate-spin" />
-            </Button>
-          )} */}
-          <PopoverContent className="w-80">
-            <div className="my-2 grid gap-4">
-              <div className="space-y-2">
-                <h4 className="font-medium leading-none">Add Object</h4>
-                <p className="text-xs text-gray-400">
-                  Add your custom data that the chat will use:
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col gap-3">
-              {/* <form onSubmit={handleSubmit(onSubmit)}>
-                <Input placeholder="Chat name" {...register("name")} />
-              </form> */}
-              {/* <Button variant="outline" onClick={handleSubmit(onSubmit)}>
-                Create
-              </Button> */}
-            </div>
-          </PopoverContent>
-        </Popover>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
-
+      {isIndexing && (
+        <div className="my-2 flex w-full flex-row justify-between gap-3 rounded-md border p-3 duration-150 hover:bg-accent hover:text-accent-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+        </div>
+      )}
       {/* chat objects list */}
       {hasObjectsData ? (
-        <div className="flex flex-col">{/* map the list of the objects */}</div>
+        <div className="flex flex-col">
+          {objectsData?.map((object) => {
+            const { chatId, id, name, type } = object;
+            return (
+              <div
+                className={`${
+                  chatId === id
+                    ? "my-2 flex w-full flex-row justify-between gap-3 rounded-md border bg-accent p-3 duration-150 hover:text-accent-foreground"
+                    : "my-2 flex w-full flex-row justify-between gap-3 rounded-md border p-3 duration-150 hover:bg-accent hover:text-accent-foreground"
+                }`}
+                key={id}
+              >
+                <div className="flex flex-row items-center gap-3">
+                  {resolveIcon(type)}
+                  <Label>{name}</Label>
+                </div>
+                {/* <Button
+                variant="destructive"
+                onClick={() => handleDeleteChat(id)}
+              >
+                <DeleteIcon className="h-4 w-4" />
+              </Button> */}
+              </div>
+            );
+          })}
+        </div>
       ) : (
         <div className="flex w-full justify-center">
           <h1 className="text-sm text-gray-400">

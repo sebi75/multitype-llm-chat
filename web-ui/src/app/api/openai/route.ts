@@ -12,42 +12,47 @@ const config = new Configuration({
 });
 const openai = new OpenAIApi(config);
 
+export const runtime = "edge";
+
 type Message = {
   role: string;
   content: string;
 };
 
 export async function POST(req: Request) {
-  //   const body = await req.text();
-  const { messages } = (await req.json()) as {
+  const { messages, chatId } = (await req.json()) as {
     messages: Message[];
+    chatId: string;
   };
 
+  // get the query param to have the chatId
+
   const latestUserMessage = messages[messages.length - 1] as Message;
-  // here we need to call the indexing service for searching
-  // context and then package the context
-  // with the user prompt and send a request to openai
-  // and get the data to send the user streaming;
+  const userPrompt = latestUserMessage.content;
 
-  //   const context = await fetcher<{ context: string }>(
-  //     "/search",
-  //     HTTPMethod.POST,
-  //     false,
-  //     {
-  //       search: search,
-  //     }
-  //   );
-
-  //   const prompt = getPromptWithContext(, context.context);
-
-  const response = await openai.createChatCompletion({
-    model: "gpt-3.5-turbo",
-    stream: true,
-    max_tokens: 1000,
-    messages: messages as ChatCompletionRequestMessage[],
+  const context = await fetcher<{
+    data: {
+      text: string;
+    }[];
+  }>("search", HTTPMethod.POST, false, {
+    search_query: userPrompt,
+    chat_id: chatId,
   });
 
-  // Convert the response into a friendly text-stream
+  const contextText = context.data.map((item) => item.text).join(" ");
+
+  const promptWithContext = getPromptWithContext(userPrompt, contextText);
+
+  // update the messages with the prompt with context
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  messages[messages.length - 1]!.content = promptWithContext;
+
+  const response = await openai.createChatCompletion({
+    model: "gpt-4",
+    stream: true,
+    max_tokens: 2250,
+    messages: messages as ChatCompletionRequestMessage[],
+  });
 
   const stream = OpenAIStream(response);
 
@@ -55,5 +60,5 @@ export async function POST(req: Request) {
 }
 
 const getPromptWithContext = (userPrompt: string, context: string) => {
-  return `Considering the following context: ${context}, answer the following user prompt: ${userPrompt}. If you don't know the answer, type "I don't find anything useful for this question related to the data.`;
+  return `Considering the following context: ${context}, answer the following prompt: ${userPrompt} making refereces to the context I gave you. If you don't know the answer, type "I don't find anything useful for this question related to the data.`;
 };

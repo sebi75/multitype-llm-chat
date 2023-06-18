@@ -21,7 +21,10 @@ export const ChatComponent: FunctionComponent<ChatComponentProps> = () => {
   const { mutate: saveChatMessage } = api.chats.saveChatMessage.useMutation();
   const { messages, input, handleInputChange, handleSubmit, setMessages } =
     useChat({
-      api: "/api/openai",
+      api: `/api/openai`,
+      body: {
+        chatId: chatId as string,
+      },
       onFinish(message) {
         saveChatMessage(
           {
@@ -56,7 +59,7 @@ export const ChatComponent: FunctionComponent<ChatComponentProps> = () => {
 
   const handleSubmitInFunction = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // here we want to also save user message to our database;
+    e.stopPropagation();
     saveChatMessage(
       {
         chatId: chatId as string,
@@ -87,6 +90,7 @@ export const ChatComponent: FunctionComponent<ChatComponentProps> = () => {
         createdAt: message.createdAt,
       }))
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messagesData]);
 
   // this is the main component that represents a chat
@@ -94,7 +98,7 @@ export const ChatComponent: FunctionComponent<ChatComponentProps> = () => {
   // if we are on a page that has a chat id, then we
   // fetch the messages for that chatId
   return (
-    <div className="relative h-full w-full">
+    <div className="flex h-screen max-h-screen w-full flex-col justify-between">
       {/* the chat component label */}
       <div className="flex flex-row border-b p-4">
         Selected chat:
@@ -103,7 +107,7 @@ export const ChatComponent: FunctionComponent<ChatComponentProps> = () => {
         </Label>
       </div>
       {/* the container that has all the messages */}
-      <div className="flex w-full flex-col px-2">
+      <div className="flex h-full w-full flex-col overflow-y-scroll px-2">
         {messages.map((message) => {
           const { content, id, role } = message;
           return (
@@ -125,27 +129,16 @@ export const ChatComponent: FunctionComponent<ChatComponentProps> = () => {
         )}
       </div>
       {/* the main input into the chat */}
-      <form
-        className="absolute bottom-3 w-full px-2"
-        onSubmit={handleSubmitInFunction}
-      >
-        <Input
-          className="w-full"
-          placeholder="Say something..."
-          value={input}
-          onChange={handleInputChange}
-        />
-      </form>
-      {/* <form
-        onSubmit={handleSubmitHookForm(onSubmit)}
-        className="absolute bottom-0 w-full"
-      >
-        <Input
-          className="w-full"
-          placeholder="Type a message..."
-          {...register("input")}
-        />
-      </form> */}
+      <div className="h-[55px] w-full bg-accent px-2">
+        <form className="w-full" onSubmit={handleSubmitInFunction}>
+          <Input
+            className="h-[55px] w-full"
+            placeholder="Say something..."
+            value={input}
+            onChange={handleInputChange}
+          />
+        </form>
+      </div>
     </div>
   );
 };
