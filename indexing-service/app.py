@@ -37,19 +37,32 @@ def index_file():
     # take the chat id from the request to create the new weaiate class
     file = request.files["file"]
 
+    # get the mime type of the file
+    mime_type = file.content_type
+
     chat_id = request.form["chat_id"]
     print("got chat_id: ", chat_id)
+    # check the file if it is audio
+    # or if it is somethig else ( will assume text for now )
+    result: list[str] = []
+    if utils.is_audio_type(mime_type):
+        print("processing audio...")
+        result: list[str] = file_service.process_audio_file(file)
+    else:
+        print("processing text...")
+        result: list[str] = file_service.process_text_file(file)
 
-    # utils.is_audio_type(file)
-    print("processing audio...")
-    result: list[str] = file_service.process_audio_file(file)
-
-    indexing_service.indexing_save(result, chat_id, client)
-
-    # embed every text and add it to the weaviate class.
+    try:
+        # embed every text and add it to the weaviate class with the chatId.
+        indexing_service.indexing_save(result, chat_id, client)
+    except Exception as e:
+        print(e)
+        return jsonify({
+            "response": "error"
+        })
 
     return jsonify({
-        "string": "result"
+        "response": "ok"
     })
 
 

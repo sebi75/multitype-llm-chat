@@ -4,6 +4,11 @@ import io
 from io import BytesIO
 from services.openai_service import get_transcription
 from utils.utils import chunk_split
+from pdfminer.pdfpage import PDFPage
+from pdfminer.pdfinterp import PDFResourceManager
+from pdfminer.pdfinterp import PDFPageInterpreter
+from pdfminer.converter import TextConverter
+from io import StringIO
 
 
 class NamedBytesIO(BytesIO):
@@ -72,6 +77,32 @@ def process_audio_file(file):
         chunks = chunk_split(transcription["text"], 512)
 
         return chunks
+
+
+def extract_text_by_page(file):
+    for page in PDFPage.get_pages(file, caching=True, check_extractable=True):
+        resource_manager = PDFResourceManager()
+        fake_file_handle = StringIO()
+        converter = TextConverter(resource_manager, fake_file_handle)
+        page_interpreter = PDFPageInterpreter(
+            resource_manager, converter)
+        page_interpreter.process_page(page)
+        text = fake_file_handle.getvalue()
+        yield text
+        # close open handles
+        converter.close()
+        fake_file_handle.close()
+
+
+def process_text_file(file) -> list[str]:
+    # use pdf miner to extract the text and get the pages
+    # then iterate them and split them into chunks
+    final_chunks = []
+    for (page_index, page) in enumerate(extract_text_by_page(file)):
+        page_chunks = split_text(page)
+        final_chunks.extend(page_chunks)
+
+    return final_chunks
 
 
 def is_valid_audio(mime_type):
