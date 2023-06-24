@@ -12,10 +12,7 @@ const Signin = ({}: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   return (
     <>
       <CustomHead title="Sign In">
-        <meta
-          name="desciption"
-          content="Authentication page for the marketing assistant tool"
-        />
+        <meta name="desciption" content="Authentication" />
       </CustomHead>
       <div className="gradient-bg flex h-screen w-full items-center justify-center">
         <div className="min-h-1/2 container flex w-full flex-col items-center space-y-10 rounded-lg border p-6 shadow-lg sm:max-w-[550px]">
