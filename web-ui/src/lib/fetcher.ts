@@ -3,7 +3,6 @@
 export const fetcher = async <T>(
   path: string,
   method: HTTPMethod,
-  authorized = false,
   params?: Record<string, string>
 ): Promise<T> => {
   const baseURL = "http://127.0.0.1:5050";
@@ -14,13 +13,11 @@ export const fetcher = async <T>(
   headers.append("Accept", "application/json");
 
   try {
-    console.log("fetching: ", url);
     const response = await fetch(url, {
       headers: headers,
       method: method,
       body: JSON.stringify(params),
     });
-    console.log({ response: JSON.stringify(response) });
 
     if (!response.ok) {
       throw new Error(response.statusText);
@@ -30,13 +27,13 @@ export const fetcher = async <T>(
     return data;
   } catch (error) {
     if (error instanceof Error) {
-      console.log(error);
       throw new Error(error.message);
     }
     throw new Error("Something went wrong");
   }
 };
 
+// there is a problem with nextjs in which it doesn't recognize the local server
 export const serverFetch = async <T>(
   path: string,
   method: HTTPMethod,
@@ -49,13 +46,11 @@ export const serverFetch = async <T>(
   headers.append("Accept", "application/json");
 
   try {
-    console.log("fetching: ", url);
     const response = await fetch(url, {
       headers: headers,
       method: method,
       body: JSON.stringify(params),
     });
-    console.log({ response: JSON.stringify(response) });
 
     if (!response.ok) {
       throw new Error(response.statusText);
@@ -65,7 +60,6 @@ export const serverFetch = async <T>(
     return data;
   } catch (error) {
     if (error instanceof Error) {
-      console.log(error);
       throw new Error(error.message);
     }
     throw new Error("Something went wrong");

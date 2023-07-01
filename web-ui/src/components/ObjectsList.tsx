@@ -30,15 +30,14 @@ export const ObjectsList: FunctionComponent = () => {
   const [file, setFile] = useState<File | null>(null);
   const [isIndexing, setIsIndexing] = useState(false);
   const { chatId } = router.query;
-  const { data: objectsData, isLoading: isObjectsLoading } =
-    api.objects.getChatObjects.useQuery(
-      {
-        chatId: chatId as string,
-      },
-      {
-        enabled: !!chatId,
-      }
-    );
+  const { data: objectsData } = api.objects.getChatObjects.useQuery(
+    {
+      chatId: chatId as string,
+    },
+    {
+      enabled: !!chatId,
+    }
+  );
   const { mutateAsync: createObject } =
     api.objects.createChatObject.useMutation();
 
@@ -49,10 +48,7 @@ export const ObjectsList: FunctionComponent = () => {
 
     try {
       setIsIndexing(true);
-      // index the file in the indexing python service
-      // for later use in the application for semantic
-      // search to get the information
-      await fetcher(path, HTTPMethod.POST, false, {
+      await fetcher(path, HTTPMethod.POST, {
         url: url,
         chat_id: chatId as string,
       });
@@ -65,6 +61,7 @@ export const ObjectsList: FunctionComponent = () => {
         {
           onSuccess: () => {
             utils.objects.invalidate();
+            setIsDialogOpen(false);
           },
         }
       );
@@ -84,8 +81,6 @@ export const ObjectsList: FunctionComponent = () => {
   };
 
   const handleAddFileToAPI = async (file: File) => {
-    const path = "/index-file";
-
     try {
       const form = new FormData();
       form.append("chat_id", chatId as string);
@@ -133,15 +128,12 @@ export const ObjectsList: FunctionComponent = () => {
     }
   };
 
-  console.log(objectsData);
-
   const handleAddObject = async () => {
     if (resourceType === "url") {
       await handleAddURL(url);
     } else {
       if (!file) return;
       await handleAddFileToAPI(file);
-      // do something else ( is is file )
     }
   };
 
@@ -151,7 +143,7 @@ export const ObjectsList: FunctionComponent = () => {
         <Label>Objects</Label>
         <Dialog
           open={isDialogOpen}
-          onOpenChange={(open) => {
+          onOpenChange={(open: boolean) => {
             if (isIndexing) return;
             setIsDialogOpen(open);
           }}
@@ -262,12 +254,6 @@ export const ObjectsList: FunctionComponent = () => {
                     </p>
                   </div>
                 </div>
-                {/* <Button
-                variant="destructive"
-                onClick={() => handleDeleteChat(id)}
-              >
-                <DeleteIcon className="h-4 w-4" />
-              </Button> */}
               </div>
             );
           })}

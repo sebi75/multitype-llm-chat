@@ -25,8 +25,6 @@ export async function POST(req: Request) {
     chatId: string;
   };
 
-  // get the query param to have the chatId
-
   const latestUserMessage = messages[messages.length - 1] as Message;
   const userPrompt = latestUserMessage.content;
 
@@ -34,7 +32,7 @@ export async function POST(req: Request) {
     data: {
       text: string;
     }[];
-  }>("search", HTTPMethod.POST, false, {
+  }>("search", HTTPMethod.POST, {
     search_query: userPrompt,
     chat_id: chatId,
   });

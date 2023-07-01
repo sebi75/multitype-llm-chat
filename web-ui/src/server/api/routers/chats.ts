@@ -107,7 +107,7 @@ export const chatsRouter = createTRPCRouter({
         searchQuery: z.string(),
       })
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ input }) => {
       const { chatId, searchQuery } = input;
 
       try {
@@ -119,10 +119,8 @@ export const chatsRouter = createTRPCRouter({
             chat_id: chatId,
           }
         );
-        console.log(context);
         return context;
       } catch (error) {
-        console.log(error);
         throw error;
       }
     }),

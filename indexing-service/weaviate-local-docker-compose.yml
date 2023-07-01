@@ -1,17 +1,16 @@
----
 version: '3.4'
 services:
   weaviate:
     command:
-    - --host
-    - 0.0.0.0
-    - --port
-    - '8085'
-    - --scheme
-    - http
+      - --host
+      - 0.0.0.0
+      - --port
+      - '8085'
+      - --scheme
+      - http
     image: semitechnologies/weaviate:1.19.8
     ports:
-    - 8085:8085
+      - 8085:8085
     restart: on-failure:0
     environment:
       QUERY_DEFAULTS_LIMIT: 25
@@ -20,4 +19,3 @@ services:
       DEFAULT_VECTORIZER_MODULE: 'none'
       ENABLE_MODULES: ''
       CLUSTER_HOSTNAME: 'node1'
-...

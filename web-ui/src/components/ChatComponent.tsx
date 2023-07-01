@@ -97,10 +97,6 @@ export const ChatComponent: FunctionComponent<ChatComponentProps> = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messagesData]);
 
-  // this is the main component that represents a chat
-  // it is either empty or has messages
-  // if we are on a page that has a chat id, then we
-  // fetch the messages for that chatId
   return (
     <div className="flex h-screen max-h-screen w-full flex-col justify-between">
       {/* the chat component label */}

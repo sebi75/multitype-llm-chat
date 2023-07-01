@@ -96,8 +96,6 @@ export const ChatsList: FunctionComponent<ChatsListProps> = ({ chats }) => {
 
   useEffect(() => {
     if (Object.keys(formState.errors).length === 0) return;
-    // map the errors from formState and display
-    // error toasts for each errr:
     Object.values(formState.errors).forEach((error) => {
       toast.toast({
         title: "Inpur error",
@@ -105,6 +103,7 @@ export const ChatsList: FunctionComponent<ChatsListProps> = ({ chats }) => {
         variant: "destructive",
       });
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formState.errors]);
 
   return (
@@ -152,7 +151,7 @@ export const ChatsList: FunctionComponent<ChatsListProps> = ({ chats }) => {
       {/* map all the chats and display them in column */}
       <div className="w-full p-2">
         {chats.map((chat) => {
-          const { createdAt, createdByUserId, id, name } = chat;
+          const { createdAt, id, name } = chat;
           return (
             <div
               className={`${

@@ -14,9 +14,6 @@ export const CustomHead: FunctionComponent<CustomHeadProps> = ({
   return (
     <Head>
       <title>{title}</title>
-      {/* meta tags */}
-      {/* seo */}
-      {/* other stuff */}
       {children}
     </Head>
   );

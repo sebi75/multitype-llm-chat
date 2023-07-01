@@ -1,4 +1,3 @@
-import os
 import uuid
 import io
 from io import BytesIO
@@ -18,7 +17,6 @@ class NamedBytesIO(BytesIO):
 
 
 def convert_audio_format(file):
-    # Convert the file to a supported format (e.g., WAV)
     audio = AudioSegment.from_file(file, format=file.mimetype.split("/")[-1])
     converted_file = NamedBytesIO(
         audio.export().read(), name=file.filename + ".wav")
@@ -27,7 +25,6 @@ def convert_audio_format(file):
 
 
 def split_text(text):
-    # Initializing K
     chunk_size = 512
 
     res = []
@@ -40,22 +37,14 @@ def split_text(text):
                 chunk += text[index]
         res.append(chunk)
 
-    print("The K chunked list: " + str(res))
-
     return res
 
 
 def process_audio_file(file):
-
-    # get the file type that we got from youtube;
     mime_type = file.mimetype
-
-    # Get the size of the file
     file.seek(0, io.SEEK_END)
     size = file.tell()
     file.seek(0)
-
-    # generate a random id for the audio file;
     random_id = uuid.uuid4()
 
     audio_info = {
@@ -67,15 +56,9 @@ def process_audio_file(file):
     if not is_valid_audio(audio_info['mime_type']):
         raise Exception("Internal server error")
     else:
-        # Now we can process the audio file
-        # Create a BytesIO object to handle the in-memory file
         audio_stream = NamedBytesIO(file.read(), name=file.filename)
-
-        # Make a request to OpenAI to get the transcription of the audio file
         transcription = get_transcription(audio_stream)
-
         chunks = chunk_split(transcription["text"], 512)
-
         return chunks
 
 
@@ -89,14 +72,11 @@ def extract_text_by_page(file):
         page_interpreter.process_page(page)
         text = fake_file_handle.getvalue()
         yield text
-        # close open handles
         converter.close()
         fake_file_handle.close()
 
 
 def process_text_file(file) -> list[str]:
-    # use pdf miner to extract the text and get the pages
-    # then iterate them and split them into chunks
     final_chunks = []
     for (page_index, page) in enumerate(extract_text_by_page(file)):
         page_chunks = split_text(page)

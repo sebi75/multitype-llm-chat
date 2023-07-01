@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import React from "react";
 import type { FunctionComponent, MouseEvent } from "react";
 import { signIn } from "next-auth/react";
@@ -21,7 +20,6 @@ export const SigninForm: FunctionComponent = () => {
         <span className="min-h-[20px]"></span>
 
         <Button variant="outline" onClick={handleGoogleSignin}>
-          {/* <FcGoogle className="mr-2" /> */}
           Sign In With Google
         </Button>
       </div>

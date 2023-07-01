@@ -1,0 +1,32 @@
+version: '3.8'
+services:
+  weaviate:
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - '8085'
+      - --scheme
+      - http
+    image: semitechnologies/weaviate:1.19.8
+    ports:
+      - 8085:8085
+    restart: on-failure:0
+    environment:
+      QUERY_DEFAULTS_LIMIT: 25
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
+      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      DEFAULT_VECTORIZER_MODULE: 'none'
+      ENABLE_MODULES: ''
+      CLUSTER_HOSTNAME: 'node1'
+  indexing-service:
+    build:
+      context: ./indexing-service
+      dockerfile: Dockerfile
+    image: indexing-service
+    env_file:
+      - ./indexing-service/.env
+    ports:
+      - 5050:5050
+    depends_on:
+      - weaviate

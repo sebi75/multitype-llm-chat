@@ -19,7 +19,6 @@ export const LoadingSpinner: FunctionComponent = () => {
           fill="currentFill"
         />
       </svg>
-      <span className="sr-only">Loading...</span>
     </div>
   );
 };
