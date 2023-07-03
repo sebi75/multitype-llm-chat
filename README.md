@@ -7,6 +7,9 @@ Structure:
 
 https://github.com/sebi75/multitype-llm-chat/assets/36008268/c3de520c-9b11-468e-80a0-803a48f61d6d
 
+![app-architecture drawio](https://github.com/sebi75/multitype-llm-chat/assets/36008268/e4c56f6b-d32e-4f4d-b4dc-497fc7868c48)
+
+
 
 ### How to start
 
