@@ -2,6 +2,12 @@ Structure:
 
 ### You can check the app architecture in the diagram located into /assets
 
+<img width="1723" alt="Untitled" src="https://github.com/sebi75/multitype-llm-chat/assets/36008268/60dfd7c0-c21d-47a5-9196-e824b323539f">
+
+
+https://github.com/sebi75/multitype-llm-chat/assets/36008268/c3de520c-9b11-468e-80a0-803a48f61d6d
+
+
 ### How to start
 
 1. Clone this repo
