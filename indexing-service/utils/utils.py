@@ -1,5 +1,7 @@
 import re
+import os
 
+from exceptions_results import OperationResult
 
 def is_youtube_video(url):
     youtube_regex = (
@@ -103,3 +105,33 @@ def categorize_file(mimetype: str) -> str:
         return "youtube"
     elif is_audio_type:
         return "audio"
+    
+
+
+
+
+# delete a file from filesystem
+def delete_file(output_path: str):
+    try:
+
+        # Attempt to delete the audio file
+        os.remove(output_path)
+        success=True
+        message=f"File '{output_path}' successfully deleted."
+    except FileNotFoundError:
+
+        # Handle the case when the file doesn't exist and return an OperationResult object with success=False and the error message
+        success=False
+        message = f"File '{output_path}' not found. Unable to delete."
+    except PermissionError:
+
+        # Handle the case when there are permission issues and return an OperationResult object with success=False and the error message
+        success=False
+        message = f"Permission error: Unable to delete '{output_path}'."
+    except Exception as e:
+
+        # Handle any other unexpected exceptions and return an OperationResult object with success=False and the error message
+        success=False
+        message = f"Error occurred while deleting '{output_path}': {e}"
+
+    return OperationResult(success=success, message=message)

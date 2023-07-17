@@ -142,5 +142,27 @@ def check_schema():
     })
 
 
+def test_youtube_transcirbe():
+    url = "https://www.youtube.com/watch?v=5ftHdsmf2C0&ab_channel=CreatedTech"
+    is_youtube_url = utils.is_youtube_video(url)
+
+    if is_youtube_url:
+        print("In youtube if for processing it...")
+
+        print(url)
+
+        result = youtube_service.transcribe_youtube(url, "../assets/saved_files/yt_videos")
+    else:
+        print("do normal page processing of the information")
+
+    print("done transcribing")
+
+
 if __name__ == "__main__":
     app.run(port=5050, debug=True)
+
+    # chat_id = request.get_json()["chat_id"]
+    # print("got chat_id: ", chat_id)
+
+    # indexing_service.indexing_save(result, chat_id, client)
+
