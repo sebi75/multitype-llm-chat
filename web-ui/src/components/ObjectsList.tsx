@@ -80,6 +80,10 @@ export const ObjectsList: FunctionComponent = () => {
     }
   };
 
+  /**
+   * @description This function will add a file to the API and then index it.
+   * We are doing this from the frontend because of the limitations of the tRPC API
+   */
   const handleAddFileToAPI = async (file: File) => {
     try {
       const form = new FormData();
