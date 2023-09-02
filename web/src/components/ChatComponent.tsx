@@ -100,11 +100,14 @@ export const ChatComponent: FunctionComponent<ChatComponentProps> = () => {
   return (
     <div className="flex h-screen max-h-screen w-full flex-col justify-between">
       {/* the chat component label */}
-      <div className="flex flex-row border-b p-4">
-        Selected chat:
-        <Label className="ml-2 font-bold">
-          {selectedChat && selectedChat.name}
-        </Label>
+      <div className="flex flex-col border-b p-4">
+        <div className="flex flex-row border-b p-4">
+          Selected chat:
+          <Label className="ml-2 font-bold">
+            {selectedChat && selectedChat.name}
+          </Label>
+        </div>
+        {/* container with additional settings for this specific chat */}
       </div>
       {/* the container that has all the messages */}
       <AutoScrollContainer>
