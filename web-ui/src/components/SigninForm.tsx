@@ -8,7 +8,7 @@ export const SigninForm: FunctionComponent = () => {
     event.preventDefault();
     signIn("google", {
       redirect: true,
-      callbackUrl: "/app",
+      callbackUrl: "/chats",
     });
   };
 

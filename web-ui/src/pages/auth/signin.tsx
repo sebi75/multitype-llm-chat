@@ -29,7 +29,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   if (session && session.user) {
     return {
       redirect: {
-        destination: "/app",
+        destination: "/chats",
         permanent: false,
       },
     };
