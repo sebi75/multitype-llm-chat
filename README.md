@@ -35,8 +35,8 @@ This will apply all the migrations found in ./web/prisma/migrations
 
 1. `bash Clone this repo`
 2. `bash cd web`
-3. `bash npm install`
-4. `bash npm run dev`
+3. `bash pnpm install`
+4. `bash pnpm dev`
 5. `bash cd ..`
 6. `bash cd indexing-service`
 7. `bash python -m venv .venv`
