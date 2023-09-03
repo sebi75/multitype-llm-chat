@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
-import { type ChatRole } from "@prisma/client";
+import { ChatRole } from "@prisma/client";
 import { HTTPMethod, serverFetch } from "@/lib/fetcher";
+import { customInstructionsSchema } from "@/components/ChatComponent";
 
 export const chatsRouter = createTRPCRouter({
   getChats: protectedProcedure.query(({ ctx }) => {
@@ -96,6 +97,36 @@ export const chatsRouter = createTRPCRouter({
           name: name,
           type: type,
           chatId: chatId,
+        },
+      });
+    }),
+
+  saveCustomInstructions: protectedProcedure
+    .input(
+      z.object({
+        chatId: z.string(),
+        data: customInstructionsSchema,
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const {
+        chatId,
+        data: { text },
+      } = input;
+
+      const customInstructions = [
+        {
+          role: ChatRole.user,
+          content: text,
+        },
+      ];
+
+      return await ctx.prisma.chat.update({
+        where: {
+          id: chatId,
+        },
+        data: {
+          customInstructions: customInstructions,
         },
       });
     }),

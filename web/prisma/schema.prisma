@@ -53,10 +53,12 @@ model User {
 }
 
 model Chat {
-    id              String   @id @default(cuid())
-    createdAt       DateTime @default(now())
-    createdByUserId String
-    name            String
+    id                 String   @id @default(cuid())
+    createdAt          DateTime @default(now())
+    createdByUserId    String
+    name               String
+    // these are instructions that will get into GPT prompt at each request
+    customInstructions Json? // This has the type of a ChatGPT `Message` ( role, content )[]
 
     createdByUser User       @relation(fields: [createdByUserId], references: [id])
     messages      Messages[]

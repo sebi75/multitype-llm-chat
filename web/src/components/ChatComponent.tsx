@@ -9,25 +9,60 @@ import { type Chat, ChatRole } from "@prisma/client";
 import { useToast } from "./ui/use-toast";
 import { useChat } from "ai/react";
 import { Label } from "@radix-ui/react-label";
+import { z } from "zod";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useSession } from "next-auth/react";
 import AutoScrollContainer from "./AutoScrollContainer";
+import {
+  Form,
+  FormField,
+  FormLabel,
+  FormControl,
+  FormItem,
+  FormDescription,
+  FormMessage,
+} from "./ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { Button } from "./ui/button";
+import { Textarea } from "./ui/textarea";
 
 type ChatComponentProps = {
   children?: ReactNode;
 };
+
+export const customInstructionsSchema = z.object({
+  text: z.string(),
+});
+export type CustomInstructionsSchemaFormType = z.infer<
+  typeof customInstructionsSchema
+>;
 
 export const ChatComponent: FunctionComponent<ChatComponentProps> = () => {
   const toast = useToast();
   const { data: sessionData } = useSession();
   const router = useRouter();
   const { chatId } = router.query;
+  const formMethods = useForm({
+    resolver: zodResolver(customInstructionsSchema),
+    defaultValues: {
+      text: "",
+    },
+  });
+  const { mutate: saveCustomInstructions } =
+    api.chats.saveCustomInstructions.useMutation();
   const { mutate: saveChatMessage } = api.chats.saveChatMessage.useMutation();
   const { messages, input, handleInputChange, handleSubmit, setMessages } =
     useChat({
       api: `/api/openai`,
       body: {
         chatId: chatId as string,
+        customInstructions: [
+          {
+            role: ChatRole.user,
+            content: formMethods.getValues("text"), // send the custom instructions to apply them
+          },
+        ],
       },
       onFinish(message) {
         saveChatMessage(
@@ -61,6 +96,35 @@ export const ChatComponent: FunctionComponent<ChatComponentProps> = () => {
 
   const selectedChat = chatsData?.find((chat) => chat.id === chatId) as Chat;
 
+  const handleSaveCustomInstructions = (
+    data: CustomInstructionsSchemaFormType
+  ) => {
+    saveCustomInstructions(
+      {
+        chatId: chatId as string,
+        data: {
+          text: data.text,
+        },
+      },
+      {
+        onSuccess() {
+          toast.toast({
+            title: "Success",
+            description: "Custom instructions saved",
+            variant: "success",
+          });
+        },
+        onError(error) {
+          toast.toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive",
+          });
+        },
+      }
+    );
+  };
+
   const handleSubmitInFunction = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     e.stopPropagation();
@@ -82,6 +146,21 @@ export const ChatComponent: FunctionComponent<ChatComponentProps> = () => {
     );
     handleSubmit(e);
   };
+
+  useEffect(() => {
+    if (!selectedChat) return;
+    if (!chatId) return;
+    const customInstructions = selectedChat.customInstructions as [
+      {
+        content: string;
+        role: ChatRole;
+      }
+    ];
+    formMethods.reset({
+      text: customInstructions[0].content ?? "",
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedChat, chatId]);
 
   useEffect(() => {
     if (!messagesData) return;
@@ -108,6 +187,36 @@ export const ChatComponent: FunctionComponent<ChatComponentProps> = () => {
           </Label>
         </div>
         {/* container with additional settings for this specific chat */}
+        <div className="">
+          <Form {...formMethods}>
+            <form
+              onSubmit={formMethods.handleSubmit(handleSaveCustomInstructions)}
+            >
+              <FormField
+                control={formMethods.control}
+                name="text"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Instructions</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        rows={5}
+                        placeholder="I want you to be very explicit and concise, give me complex answers and consider my capacity of understanding is very high and you don't have to simplify things..."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Add custom instructions that will apply for every chat
+                      message.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit">Save settings</Button>
+            </form>
+          </Form>
+        </div>
       </div>
       {/* the container that has all the messages */}
       <AutoScrollContainer>

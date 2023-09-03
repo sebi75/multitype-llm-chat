@@ -20,14 +20,17 @@ type Message = {
 };
 
 export async function POST(req: Request) {
-  const { messages, chatId } = (await req.json()) as {
+  const { messages, chatId, customInstructions } = (await req.json()) as {
     messages: Message[];
+    customInstructions: Message[];
     chatId: string;
   };
 
   const latestUserMessage = messages[messages.length - 1] as Message;
   const userPrompt = latestUserMessage.content;
 
+  // fetch the indexing service for the data context
+  // this will get the most relevant data that the user added to this chat
   const context = await fetcher<{
     data: {
       text: string;
@@ -40,16 +43,22 @@ export async function POST(req: Request) {
   const contextText = context.data.map((item) => item.text).join(" ");
 
   const promptWithContext = getPromptWithContext(userPrompt, contextText);
+  const customInstructionsPrompt = customInstructions
+    .map((item) => item.content)
+    .join(" ");
+  const prompt = `These are some custom instructions that I want you to pay attention when responding to my prompt: ${customInstructionsPrompt}. Now, ${promptWithContext}`;
 
+  // consider only the latest 3 messages
+  const latestMessages = messages.slice(-3);
   // update the messages with the prompt with context
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  messages[messages.length - 1]!.content = promptWithContext;
+  latestMessages[latestMessages.length - 1]!.content = prompt;
 
   const response = await openai.createChatCompletion({
     model: "gpt-4",
     stream: true,
     max_tokens: 2250,
-    messages: messages as ChatCompletionRequestMessage[],
+    messages: latestMessages as ChatCompletionRequestMessage[],
   });
 
   const stream = OpenAIStream(response);
