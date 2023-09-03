@@ -3,7 +3,7 @@
 import { useState, type FunctionComponent, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Loader2, PlusIcon, YoutubeIcon } from "lucide-react";
+import { DeleteIcon, Loader2, PlusIcon, YoutubeIcon } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HTTPMethod, fetcher } from "@/lib/fetcher";
 import {
@@ -19,6 +19,7 @@ import { useRouter } from "next/router";
 import { api } from "@/utils/api";
 import { Input } from "./ui/input";
 import { useToast } from "./ui/use-toast";
+import { useMutation } from "@tanstack/react-query";
 
 export const ObjectsList: FunctionComponent = () => {
   const router = useRouter();
@@ -38,8 +39,18 @@ export const ObjectsList: FunctionComponent = () => {
       enabled: !!chatId,
     }
   );
+  const { mutate: deleteIndexedData } = useMutation(
+    ({ objectId, chatId }: { objectId: string; chatId: string }) => {
+      const path = "/delete-object";
+      return fetcher(path, HTTPMethod.POST, {
+        object_id: objectId,
+        chat_id: chatId,
+      });
+    }
+  );
   const { mutateAsync: createObject } =
     api.objects.createChatObject.useMutation();
+  const { mutate: deleteObject } = api.objects.deleteObject.useMutation();
 
   const hasObjectsData = objectsData && objectsData?.length > 0;
 
@@ -48,23 +59,21 @@ export const ObjectsList: FunctionComponent = () => {
 
     try {
       setIsIndexing(true);
+      // first we save it into the main mysql data store, and then make the call to index
+      // if indexing call fails retry, if retry fails, delete the object from the main data store
+      const result = await createObject({
+        chatId: chatId as string,
+        fileType: "youtube",
+        name: url,
+      });
+      utils.objects.invalidate();
+      setIsDialogOpen(false);
+
       await fetcher(path, HTTPMethod.POST, {
         url: url,
         chat_id: chatId as string,
+        object_id: result.id,
       });
-      await createObject(
-        {
-          chatId: chatId as string,
-          fileType: "youtube",
-          name: url,
-        },
-        {
-          onSuccess: () => {
-            utils.objects.invalidate();
-            setIsDialogOpen(false);
-          },
-        }
-      );
       toast.toast({
         title: "Indexing successful",
         description:
@@ -139,6 +148,44 @@ export const ObjectsList: FunctionComponent = () => {
       if (!file) return;
       await handleAddFileToAPI(file);
     }
+  };
+
+  const handleDeleteObject = (objectId: string) => {
+    // need to delete the object from the index and then from the main datastore
+    deleteIndexedData(
+      { objectId: objectId, chatId: chatId as string },
+      {
+        onError: () => {
+          toast.toast({
+            title: "Failed to delete object",
+            description: "Failed to delete object",
+            variant: "destructive",
+          });
+        },
+        onSuccess: () => {
+          // invalidate
+          utils.objects.invalidate();
+          deleteObject(
+            { id: objectId },
+            {
+              onSuccess: () => {
+                toast.toast({
+                  title: "Object deleted successfully",
+                  description: "Object deleted successfully",
+                });
+              },
+              onError: () => {
+                toast.toast({
+                  title: "Failed to delete object",
+                  description: "Failed to delete object",
+                  variant: "destructive",
+                });
+              },
+            }
+          );
+        },
+      }
+    );
   };
 
   return (
@@ -233,11 +280,21 @@ export const ObjectsList: FunctionComponent = () => {
               <div
                 className={`${
                   chatId === id
-                    ? "my-2 flex w-full flex-row justify-between gap-3 rounded-md border bg-accent p-3 duration-150 hover:text-accent-foreground"
-                    : "my-2 flex w-full flex-row justify-between gap-3 rounded-md border p-3 duration-150 hover:bg-accent hover:text-accent-foreground"
+                    ? "relative my-2 flex w-full flex-row justify-between gap-3 rounded-md border bg-accent p-3 duration-150 hover:text-accent-foreground"
+                    : "relative my-2 flex w-full flex-row justify-between gap-3 rounded-md border p-3 duration-150 hover:bg-accent hover:text-accent-foreground"
                 }`}
                 key={id}
               >
+                <div className="absolute right-0 top-0">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      handleDeleteObject(id);
+                    }}
+                  >
+                    <DeleteIcon className="h-4 w-4" />
+                  </Button>
+                </div>
                 <div className="flex flex-col items-center gap-3">
                   {object.preview && object.preview.image && (
                     <div className="relative h-auto w-full">

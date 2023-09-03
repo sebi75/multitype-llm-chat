@@ -6,6 +6,7 @@ import {
   OpenAIApi,
 } from "openai-edge";
 import { OpenAIStream, StreamingTextResponse } from "ai";
+import { prisma } from "@/server/db";
 
 const config = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
@@ -29,16 +30,33 @@ export async function POST(req: Request) {
   const latestUserMessage = messages[messages.length - 1] as Message;
   const userPrompt = latestUserMessage.content;
 
+  // get all the object ids that the user has added to this chat
+  const objectIds = await prisma.objects.findMany({
+    where: {
+      chatId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
   // fetch the indexing service for the data context
   // this will get the most relevant data that the user added to this chat
-  const context = await fetcher<{
-    data: {
-      text: string;
-    }[];
-  }>("search", HTTPMethod.POST, {
-    search_query: userPrompt,
-    chat_id: chatId,
-  });
+  let context: { data: { text: string }[] } = { data: [] };
+  try {
+    // if this fails, just proceed without the context..?
+    context = await fetcher<{
+      data: {
+        text: string;
+      }[];
+    }>("search", HTTPMethod.POST, {
+      search_query: userPrompt,
+      chat_id: chatId,
+      object_ids: JSON.stringify(objectIds.map((item) => item.id)),
+    });
+  } catch (error) {
+    console.error(error);
+  }
 
   const contextText = context.data.map((item) => item.text).join(" ");
 
@@ -57,7 +75,7 @@ export async function POST(req: Request) {
   const response = await openai.createChatCompletion({
     model: "gpt-4",
     stream: true,
-    max_tokens: 2250,
+    max_tokens: 2000,
     messages: latestMessages as ChatCompletionRequestMessage[],
   });
 
