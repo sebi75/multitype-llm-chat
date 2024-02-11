@@ -6,8 +6,7 @@
   research a specific large legal document, but adding other documents will likely confuse the model and you are
   likely to get mixed results.
 
-- The app is currently in development and is not ready for production use. One can use it locally by following the
-  instructions below.
+- The app is currently in development and is not ready for production use. One can use it locally by following the instructions below.
 
 Structure:
 
@@ -21,28 +20,61 @@ https://github.com/sebi75/multitype-llm-chat/assets/36008268/c3de520c-9b11-468e-
 
 ### How to start
 
-## Run migrations
+## Initialize the database
 
 - Create a new database in your local mysql server or use a remote one like PlanetScale
 - Add DATABASE_URL in your .env file
-- Run migrations in ./web:
+- Initialize your new database with the schema:
 
 ```bash
-pnpnm migrate:dev
+pnpnm run db:push
 ```
 
-This will apply all the migrations found in ./web/prisma/migrations
+## Install dependencies
 
-1. `bash Clone this repo`
-2. `bash cd web`
-3. `bash pnpm install`
-4. `bash pnpm dev`
-5. `bash cd ..`
-6. `bash cd indexing-service`
-7. `bash python -m venv .venv`
-8. `bash source .venv/bin/activate`
-9. `bash pip install -r requirements.txt`
-10. `bash python main.py`
+```bash
+ cd web
+```
+
+```bash
+ pnpm install
+```
+
+## Start the next.js app
+
+```bash
+pnpm dev
+```
+
+## Initialize the indexing service
+
+```
+bash cd ../indexing-service
+```
+
+Create a new virtual environment and install the dependencies
+
+```bash
+python -m venv .venv
+```
+
+Activate the new virtual environment
+
+```bash
+source .venv/bin/activate
+```
+
+Install the dependencies from the requirements.txt file
+
+```bash
+pip install -r requirements.txt
+```
+
+Start the Flask API.
+
+```bash
+python main.py
+```
 
 ### Todo:
 
