@@ -27,7 +27,7 @@ https://github.com/sebi75/multitype-llm-chat/assets/36008268/c3de520c-9b11-468e-
 - Initialize your new database with the schema:
 
 ```bash
-pnpnm run db:push
+pnpm run db:push
 ```
 
 ## Install dependencies
