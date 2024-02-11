@@ -1,5 +1,6 @@
 ## What is Multitype-LLM-Chat?
 
+- A basic POC for a RAG-based chatbot that can be used for a variety of purposes.
 - This is an AI-powered tool made for researching, by augmenting GPT models with your own data.
 
 - We recommend using a 'chat' instance within the app for a singular purpose. For example, you can use it to
@@ -30,20 +31,14 @@ https://github.com/sebi75/multitype-llm-chat/assets/36008268/c3de520c-9b11-468e-
 pnpm run db:push
 ```
 
-## Install dependencies
+## Start the weaviate vector database via docker-compose
 
 ```bash
- cd web
+cd ./indexing-service
 ```
 
 ```bash
- pnpm install
-```
-
-## Start the next.js app
-
-```bash
-pnpm dev
+docker-compose up
 ```
 
 ## Initialize the indexing service
@@ -76,6 +71,16 @@ Start the Flask API.
 python main.py
 ```
 
-### Todo:
+## Initialize the web app
 
-Add posibility to use the app locally without authentication
+```bash
+ cd web
+```
+
+```bash
+ pnpm install
+```
+
+```bash
+pnpm dev
+```
